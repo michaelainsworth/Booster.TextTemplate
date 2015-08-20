@@ -95,11 +95,24 @@ namespace booster {
             // -----------------------------------------------------------------
             
             /*!
-             \brief The parse_chars() method parses a sequence of characters.
+             \brief The parse_sequence() method parses a sequence of characters.
              */
             bool parse_sequence(iterator& begin, iterator end,
                                 const std::string& chars);
             
+            /*!
+             \brief The parse_alternates() method parses any of the characters.
+             */
+            bool parse_alternates(iterator& begin, iterator end,
+                                const std::string& chars);
+            
+            // -----------------------------------------------------------------
+            // Character Classes
+            // -----------------------------------------------------------------
+            
+            std::string whitespace() {
+                return " \t\r\n";
+            }
             
         };
         
@@ -178,7 +191,9 @@ namespace booster {
             iterator it(begin);
             
             //! \todo What about the trailing whitespace after the 't'?
-            if (parse_sequence(it, end, "@print")) {
+            if (parse_sequence(it, end, "@print") &&
+                parse_alternates(it, end, whitespace())) {
+                
                 begin = it;
                 return true;
             }
@@ -195,7 +210,8 @@ namespace booster {
                                               const std::string& chars) {
             iterator it(begin);
             
-            for (std::string::const_iterator sit = chars.begin(), send = chars.end();
+            for (std::string::const_iterator sit = chars.begin(),
+                 send = chars.end();
                  sit != send; ++sit) {
                 
                 if (it == end) {
@@ -211,6 +227,26 @@ namespace booster {
             
             begin = it;
             return true;
+        }
+        
+        template<typename I>
+        bool parser<I>::parse_alternates(iterator& begin, iterator end,
+                                         const std::string& chars) {
+            if (begin == end) {
+                return false;
+            }
+            
+            for (std::string::const_iterator sit = chars.begin(),
+                 send = chars.end();
+                 sit != send; ++sit) {
+                
+                if (*begin == *sit) {
+                    ++begin;
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
         // =====================================================================
