@@ -11,20 +11,16 @@ using std::string;
 
 BOOST_AUTO_TEST_CASE(text) {
     {
-        string in("<b>Hello</b>");
         text_template tpl;
-        error_condition e;
-        string::iterator begin = in.begin();
-        BOOST_CHECK(parse(begin, in.end(), tpl, e));
+        string in("<b>Hello</b>");
+        BOOST_CHECK_NO_THROW(tpl = parse(in.begin(), in.end()));
         BOOST_CHECK(in == tpl());
     }
     
     {
-        string in("<b>Hello@print</b>");
         text_template tpl;
-        error_condition e;
-        string::iterator begin = in.begin();
-        BOOST_CHECK(parse(begin, in.end(), tpl, e));
+        string in("<b>Hello @print</b>");
+        BOOST_CHECK_NO_THROW(tpl = parse(in.begin(), in.end()));
         BOOST_CHECK(in == tpl());
     }
 }

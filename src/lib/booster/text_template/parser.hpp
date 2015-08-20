@@ -13,11 +13,11 @@ namespace booster {
         // =====================================================================
         
         template<typename I>
-        bool parse(I& begin, I end, text_template& tpl,
+        bool parse(I begin, I end, text_template& tpl,
                    boost::system::error_condition& e);
         
         template<typename I>
-        text_template parse(I& begin, I end);
+        text_template parse(I begin, I end);
         
         // =====================================================================
         // Interface
@@ -254,14 +254,14 @@ namespace booster {
         // =====================================================================
 
         template<typename I>
-        bool parse(I& begin, I end, text_template& tpl,
+        bool parse(I begin, I end, text_template& tpl,
                    boost::system::error_condition& e) {
             parser<I> p;
             return p.parse(begin, end, tpl, e);
         }
         
         template<typename I>
-        text_template parse(I& begin, I end) {
+        text_template parse(I begin, I end) {
             text_template tpl;
             boost::system::error_condition e;
             parser<I> p;
