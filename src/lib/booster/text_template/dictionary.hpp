@@ -25,7 +25,7 @@ namespace booster {
             // -----------------------------------------------------------------
             
             typedef std::string string_type;
-            typedef std::map<std::string,value*> map_type;
+            typedef std::map<std::string,basic_value*> map_type;
             typedef boost::shared_ptr<map_type> map_ptr_type;
             
             // -----------------------------------------------------------------
@@ -80,7 +80,7 @@ namespace booster {
                 values_->erase(it);
             }
             
-            values_->insert(std::make_pair(name, new atomic_value<T>(data)));
+            values_->insert(std::make_pair(name, new value<T>(data)));
             return *this;
         }
         

@@ -72,6 +72,7 @@ namespace booster {
         inline std::string text_template::operator()() {
             std::ostringstream os;
             nodes_->execute(os);
+            return os.str();
         }
         
     }

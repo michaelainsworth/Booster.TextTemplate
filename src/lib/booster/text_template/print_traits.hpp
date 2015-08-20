@@ -1,6 +1,8 @@
 #ifndef BOOSTER_TEXT_TEMPLATE_PRINT_TRAITS_HPP_INCLUDED
 #define BOOSTER_TEXT_TEMPLATE_PRINT_TRAITS_HPP_INCLUDED
 
+#include <booster/text_template/error.hpp>
+
 namespace booster {
     namespace text_template {
         
@@ -31,11 +33,11 @@ namespace booster {
             // -----------------------------------------------------------------
             
             /*!
-             \brief The print() function simply calls operator << on \p os
-             before returning it.
+             \brief The print() function sets e to an error value by default.
              */
-            static std::ostream& print(std::ostream& os,
-                                       const data_type& value);
+            static void print(std::ostream& os,
+                                       const data_type& value,
+                                       boost::system::error_condition& e);
             
         };
         
@@ -44,9 +46,11 @@ namespace booster {
         // =====================================================================
         
         template<typename T>
-        inline std::ostream& print_traits<T>::print(std::ostream& os,
-                                                    const data_type& value) {
-            return (os << value);
+        inline void print_traits<T>
+        ::print(std::ostream& os,
+                const data_type& value,
+                boost::system::error_condition& e) {
+            e.assign(value_not_printable, get_error_category());
         }
         
     }

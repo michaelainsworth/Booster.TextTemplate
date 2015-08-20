@@ -5,7 +5,7 @@
 #include <boost/system/system_error.hpp>
 
 namespace booster {
-    namespace error {
+    namespace text_template {
 
         // =====================================================================
         // Enumeration: errc
@@ -16,7 +16,8 @@ namespace booster {
          by the text template library.
          */
         enum errc {
-            ok = 0
+            ok = 0,
+            value_not_printable
         };
         
         // =====================================================================
@@ -36,12 +37,19 @@ namespace booster {
                 switch (ev) {
                     case ok:
                         return "No error.";
+                    case value_not_printable:
+                        return "The value type is not specified.";
                     default:
                         return "Unknown error.";
                 }
             }
             
         };
+        
+        inline error_category& get_error_category() {
+            static error_category ec;
+            return ec;
+        }
         
     }
 }
