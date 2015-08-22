@@ -1,7 +1,7 @@
-#ifndef BOOSTER_TEXT_TEMPLATE_QUICK_PRINT_NODE_HPP_INCLUDED
-#define BOOSTER_TEXT_TEMPLATE_QUICK_PRINT_NODE_HPP_INCLUDED
+#ifndef BOOSTER_TEXT_TEMPLATE_VALUE_NODE_HPP_INCLUDED
+#define BOOSTER_TEXT_TEMPLATE_VALUE_NODE_HPP_INCLUDED
 
-#include <booster/text_template/parent_node.hpp>
+#include <booster/text_template/node.hpp>
 #include <string>
 
 namespace booster {
@@ -12,9 +12,10 @@ namespace booster {
         // =====================================================================
         
         /*!
-         \brief The text node class represents unparsed text.
+         \brief The value_node class represents a value.
          */
-        class quick_print_node : public parent_node {
+        template<typename T>
+        class value_node : public node {
         public:
             
             // -----------------------------------------------------------------
@@ -24,10 +25,17 @@ namespace booster {
             template<typename I> friend class parser;
             
             // -----------------------------------------------------------------
+            // Typedefs
+            // -----------------------------------------------------------------
+            
+            typedef T data_type;
+            
+            // -----------------------------------------------------------------
             // Lifecycle
             // -----------------------------------------------------------------
             
-            virtual ~quick_print_node() {}
+            value_node(const data_type& data);
+            virtual ~value_node() {}
             
             // -----------------------------------------------------------------
             // Execution
@@ -35,19 +43,29 @@ namespace booster {
             
             virtual void execute(std::ostream& os);
             
+            // -----------------------------------------------------------------
+            // Variables
+            // -----------------------------------------------------------------
+            
+        private:
+            
+            data_type data_;
+            
         };
         
         // =====================================================================
         // Implementation
         // =====================================================================
         
-        inline void quick_print_node::execute(std::ostream& os) {
-            //! \todo Finish
-            os << "QUICK PRINT!";
+        template<typename T>
+        inline value_node<T>::value_node(const data_type& data) : data_(data) {}
+        
+        template<typename T>
+        inline void value_node<T>::execute(std::ostream& os) {
+            //! \todo what should this do?
         }
         
     }
 }
 
-#endif // #ifndef BOOSTER_TEXT_TEMPLATE_QUICK_PRINT_NODE_HPP_INCLUDED
-
+#endif // #ifndef BOOSTER_TEXT_TEMPLATE_VALUE_NODE_HPP_INCLUDED

@@ -14,6 +14,9 @@ namespace booster {
         /*!
          \brief An value represents a single value that is passed to a
          text template.
+         
+         \todo Add a #define that determines whether integral types can have
+               arithmetic.
          */
         template<typename T>
         class value : public basic_value {
