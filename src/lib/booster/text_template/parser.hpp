@@ -322,9 +322,6 @@ namespace booster {
             return false;
         }
         
-        /*!
-         \todo Implement
-         */
         template<typename I>
         bool parser<I>::parse_double_value(iterator& begin,
                                            iterator end,
@@ -380,7 +377,6 @@ namespace booster {
                                 break;
                             }
                         } else {
-                            //! \todo Finish
                             result += *it;
                         }
                     }
@@ -402,6 +398,64 @@ namespace booster {
             try {
                 double_type d = boost::lexical_cast<double_type>(result);
                 parent.children_->push_back(new value_node<double_type>(d));
+                begin = it;
+                return true;
+            } catch (boost::bad_lexical_cast&) {
+                return false;
+            }
+        }
+        
+        template<typename I>
+        bool parser<I>::parse_integer_value(iterator& begin,
+                                            iterator end,
+                                            parent_node& parent) {
+            if (begin == end) {
+                return false;
+            }
+            
+            iterator it(begin), prev(it);
+            std::string result, digs = digits();
+            unsigned i = 0;
+            bool is_negative = false, found_sign = false;
+            
+            while (it != end) {
+                if (0 == i) {
+                    if (*it == '-') {
+                        is_negative = true;
+                        found_sign = true;
+                        result += *it;
+                    } else if (*it == '+') {
+                        found_sign = true;
+                        result += *it;
+                    } else {
+                        iterator next(it);
+                        if (!parse_alternates(next, end, digs)) {
+                            return false;
+                        } else {
+                            result += *it;
+                        }
+                    }
+                } else {
+                    iterator next(it);
+                    if (!parse_alternates(next, end, digs)) {
+                        if (result[i-1] == '-' || result[i-1] == '+') {
+                            return false;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        result += *it;
+                    }
+                }
+                
+                prev = it;
+                ++i;
+                ++it;
+            }
+            
+            try {
+                integer_type i = boost::lexical_cast<integer_type>(result);
+                parent.children_->push_back(new value_node<integer_type>(i));
                 begin = it;
                 return true;
             } catch (boost::bad_lexical_cast&) {
