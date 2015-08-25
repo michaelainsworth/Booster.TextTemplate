@@ -3,10 +3,15 @@
 
 #include <boost/lexical_cast.hpp>
 #include <booster/text_template/error.hpp>
+#include <booster/text_template/lexer.hpp>
 #include <booster/text_template/quick_print_node.hpp>
+#include <booster/text_template/symbol_type.hpp>
 #include <booster/text_template/text_node.hpp>
 #include <booster/text_template/text_template.hpp>
+#include <booster/text_template/token.hpp>
 #include <booster/text_template/value_node.hpp>
+#include <map>
+#include <stack>
 
 namespace booster {
     namespace text_template {
@@ -25,24 +30,6 @@ namespace booster {
         // =====================================================================
         // Interface
         // =====================================================================
-
-        /**
-         
-         \todo Document the following ABNF-style syntax.
-         
-         condition  = expression [< <= == != >= > ] expression
-         expression = [+ -] term ([+ -] term)
-         ; one or more
-         term       = factor [* /] factor
-         factor     = identifier | value | "(" expression ")"
-         identifier = [a-zA-Z_][a-zA-Z_0-9]*
-         ; what about dots and subscripts for traversal?
-         value      = integer | double | string | object | array
-         ; object and array in JSON-like notation.
-         
-         */
-        
-
         
         /*!
          \brief A parser transforms a series of characters (of type char)
@@ -52,6 +39,33 @@ namespace booster {
          allows parsers to work with different containers.
          
          \todo Make a note about pass-by-reference for the begin iterator.
+         
+         \todo Previously this was a recursive descent parser - it's now going
+         to be an LL parser.
+         
+            program             = ?
+
+            text                = ?
+            instruction         = quick_print | quick_for
+            quick_print         = "@print " argument_list ";"
+            quick_for           = "@for " "(" "auto" identifier ":" logical ")" ":"
+            (text | instruction)
+            "@endfor;"
+            argument_list       = logical *("," logical)
+            logical             = comparison *1(("&&" | "||") comparison)
+            comparison          = expression *1(("<" | "<=" | "==" | "!=" | ">=" | ">") expression)
+            expression          = term *1(("+" | "-") term)
+            term                = factor *1("*" | "/") factor)
+            factor              = value | reference | "(" logical ")"
+            reference           = identifier *1(resolver)
+            resolver            = ( "[" logical "]" ) | ( "." identifier )
+            identifier          = [_a-zA-Z][_a-zA-Z0-9]*
+            value               = "true" | "false" | double | integer | string | array | dictionary
+            double              = [+-]?[0-9]+(\.[0-9]+)
+            integer             = [+-]?[0-9]+
+            string              = '"' *char '"'
+            array               = "[" *1(logical) "]"
+            dictionary          = "{" *1(identifier ":" logical)
          */
         template<typename I>
         class parser {
@@ -61,10 +75,12 @@ namespace booster {
             // Typedefs
             // -----------------------------------------------------------------
             
-            //! \todo These typedefs may depend on climits or some boot macro
-            //        that indicates the maximum value for these.
-            typedef long double double_type;
-            typedef long long int integer_type;
+            typedef void (parser::*parse_function_type)(const token& tk, parent_node& context);
+            typedef std::map<symbol_type, parse_function_type> ts_function_map;
+            typedef std::map<symbol_type, ts_function_map> nts_function_map;
+            typedef std::stack<symbol_type> stack_type;
+            typedef I iterator;
+            typedef std::string string_type;
             
             // -----------------------------------------------------------------
             // Lookaheads
@@ -77,10 +93,10 @@ namespace booster {
         public:
             
             // -----------------------------------------------------------------
-            // Typedefs
+            // Lifecycle
             // -----------------------------------------------------------------
             
-            typedef I iterator;
+            parser();
             
             // -----------------------------------------------------------------
             // High-level Parsing
@@ -90,7 +106,7 @@ namespace booster {
              \brief The parse() method is the main method used to parse input
              in order to produce a parse tree.
              */
-            bool parse(iterator& begin, iterator end, text_template& tpl,
+            bool parse(const string_type& filename, iterator& begin, iterator end, text_template& tpl,
                        boost::system::error_condition& e);
             
             // -----------------------------------------------------------------
@@ -143,46 +159,12 @@ namespace booster {
             /*!
              \todo Implement
              */
-            bool parse_expression(iterator& begin, iterator end, parent_node& parent);
-            /*!
-             \todo Implement
-             */
-            bool parse_term(iterator& begin, iterator end, parent_node& parent);
-            /*!
-             \todo Implement
-             */
-            bool parse_factor(iterator& begin, iterator end, parent_node& parent);
-            /*!
-             \todo Implement
-             */
-            bool parse_identifier(iterator& begin, iterator end, parent_node& parent);
-            /*!
-             \todo Implement
-             */
-            bool parse_value(iterator& begin, iterator end, parent_node& parent);
-            
-            /*!
-             \todo Implement
-             */
             bool parse_double_value(iterator& begin, iterator end, parent_node& parent);
             
             /*!
              \todo Implement
              */
             bool parse_integer_value(iterator& begin, iterator end, parent_node& parent);
-            
-            /*!
-             \todo Implement
-             */
-            bool parse_string_value(iterator& begin, iterator end, parent_node& parent);
-            /*!
-             \todo Implement
-             */
-            bool parse_object_value(iterator& begin, iterator end, parent_node& parent);
-            /*!
-             \todo Implement
-             */
-            bool parse_array_value(iterator& begin, iterator end, parent_node& parent);
             
             // -----------------------------------------------------------------
             // Parsing Helpers
@@ -212,33 +194,83 @@ namespace booster {
                 return "0123456789";
             }
             
+            void parse_text2(const token& tk, parent_node& context) {
+                //! \todo Nodes should have file, line, column and offset.
+                context.children_->push_back(new text_node(tk.value));
+            }
+            
+            // -----------------------------------------------------------------
+            // Variables
+            // -----------------------------------------------------------------
+            
+        private:
+            
+            nts_function_map table_;
+            lexer<iterator> lexer_;
+            stack_type stack_;
+            
         };
         
         // =====================================================================
         // Implementation
         // =====================================================================
+
+        // ---------------------------------------------------------------------
+        // Lifecycle
+        // ---------------------------------------------------------------------
+        
+        template<typename I>
+        parser<I>::parser() {
+            //! \todo Set up the parse table.
+            table_[nts_template][ts_text] = &parser<I>::parse_text2;
+        }
         
         // ---------------------------------------------------------------------
         // High-level Parsing
         // ---------------------------------------------------------------------
         
         template<typename I>
-        inline bool parser<I>::parse(iterator& begin, iterator end,
+        inline bool parser<I>::parse(const string_type& filename, iterator& it, iterator end,
                                      text_template& tpl,
                                      boost::system::error_condition& e) {
             
-            while (begin != end) {
-                lookahead l = parse_text(begin, end, *tpl.nodes_);
-                switch (l) {
-                    case lookahead_quick_print_open:
-                        parse_quick_print(begin, end, *tpl.nodes_);
-                        break;
-                    case lookahead_eof:
-                    default:
-                        return true;
+            while (stack_.size()) {
+                stack_.pop();
+            }
+            
+            //! \todo Reset the lexer?
+            
+            stack_.push(ts_eof);
+            stack_.push(nts_template);
+            
+            typename nts_function_map::iterator
+                  nts_end = table_.end()
+                , nts_it = nts_end;
+            
+            
+            token tk;
+            while ((tk = lexer_.get_token(it, end))) {
+                symbol_type state = stack_.top();
+                
+                nts_it = table_.find(state);
+                if (nts_it == nts_end) {
+                    //! \todo Error - no current state - what to do here?
+                    //! \todo This is more a programming error.
+                    return false;
                 }
                 
-                //! \todo Finish
+                
+                typename ts_function_map::iterator
+                ts_it = nts_it->second.find(tk.type)
+                , ts_end = nts_it->second.end();
+                
+                if (ts_it == ts_end) {
+                    //! \todo Unexpected symbol
+                    return false;
+                }
+                
+                parse_function_type pf = ts_it->second;
+                (this->*pf)(tk, *tpl.nodes_);
             }
             
             return true;
@@ -248,6 +280,7 @@ namespace booster {
         // Low-level Parsing
         // ---------------------------------------------------------------------
         
+        //! \todo This is no longer used.
         template<typename I>
         inline typename parser<I>::lookahead parser<I>::parse_text(iterator& begin,
                                                           iterator end,
@@ -519,7 +552,8 @@ namespace booster {
         bool parse(I begin, I end, text_template& tpl,
                    boost::system::error_condition& e) {
             parser<I> p;
-            return p.parse(begin, end, tpl, e);
+            //! \todo Fix filename
+            return p.parse("unknown", begin, end, tpl, e);
         }
         
         template<typename I>
@@ -528,7 +562,8 @@ namespace booster {
             boost::system::error_condition e;
             parser<I> p;
             
-            if (!p.parse(begin, end, tpl, e)) {
+            //! \todo Fix filename!
+            if (!p.parse("unknown", begin, end, tpl, e)) {
                 throw boost::system::system_error(e.value(), e.category());
             }
             

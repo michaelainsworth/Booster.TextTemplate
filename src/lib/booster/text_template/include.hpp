@@ -13,6 +13,8 @@
 #include <booster/text_template/quick_print_node.hpp>
 #include <booster/text_template/text_node.hpp>
 #include <booster/text_template/text_template.hpp>
+#include <booster/text_template/token.hpp>
 #include <booster/text_template/value.hpp>
+#include <booster/text_template/symbol_type.hpp>
 
 #endif // #ifndef BOOSTER_TEXT_TEMPLATE_INCLUDE_HPP_INCLUDED
