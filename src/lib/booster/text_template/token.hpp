@@ -2,6 +2,7 @@
 #define BOOSTER_TEXT_TEMPLATE_TOKEN_HPP_INCLUDED
 
 #include <booster/text_template/common.hpp>
+#include <booster/text_template/input_position.hpp>
 #include <booster/text_template/symbol_type.hpp>
 #include <iostream>
 #include <string>
@@ -39,16 +40,15 @@ namespace booster {
              The default constructor is usually used when a token is created
              and immediately overridden with, e.g., a value from the lexer.
              */
-            token() : filename("unknown"), line(0), column(0), offset(0),
-            type(ts_unknown), value("") {}
+            token() : position("unknown", 0, 0, 0), type(ts_unknown), value("")
+            {}
             
             /*!
              \brief This constructor is used to create the token with explicit
              values.
              */
-            token(const string_type& f, line_type l, column_type c,
-                  offset_type o, symbol_type s, const string_type& v)
-            : filename(f), line(l), column(c), offset(o), type(s), value(v) {}
+            token(const input_position& p, symbol_type s, const string_type& v)
+            : position(p), type(s), value(v) {}
             
 
             // -----------------------------------------------------------------
@@ -67,17 +67,15 @@ namespace booster {
             // Variables
             // -----------------------------------------------------------------
             
-            string_type filename;
-            line_type line;
-            column_type column;
-            offset_type offset;
+            input_position position;
             symbol_type type;
             string_type value;
             
         };
         
         std::ostream& operator <<(std::ostream& os, const token& tk) {
-            os << tk.filename << ":" << tk.line << ":" << tk.column
+            const input_position& p = tk.position;
+            os << p.filename << ":" << p.line << ":" << p.column
                << " => " << symbol_type_description(tk.type) << " (" << tk.type
                << ") => ";
             

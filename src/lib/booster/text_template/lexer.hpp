@@ -46,23 +46,10 @@ namespace booster {
             
         private:
             
-            struct position {
-                
-                position(line_type l, column_type c, offset_type o)
-                : line(l), column(c), offset(o) {}
-                
-                line_type line;
-                column_type column;
-                offset_type offset;
-            };
-            
             bool get_char(char& c, iterator& it, iterator end);
-            token position_to_token(const position& p, symbol_type s, const string_type& value);
+            token position_to_token(const input_position& p, symbol_type s, const string_type& value);
             
-            string_type filename_;
-            line_type line_;
-            column_type column_;
-            offset_type offset_;
+            input_position position_;
             
         };
         
@@ -72,7 +59,7 @@ namespace booster {
         
         //! \todo Fix the filename.
         template<typename I>
-        inline lexer<I>::lexer() : filename_("unknown"), line_(1), column_(1), offset_(1) {}
+        inline lexer<I>::lexer() : position_("unknown", 1, 1, 1) {}
 
         template<typename I>
         token lexer<I>::get_token(iterator& it, iterator end) {
@@ -80,7 +67,7 @@ namespace booster {
                 return token();
             }
             
-            position p(line_, column_, offset_);
+            input_position p(position_);
             string_type text;
             char c;
 
@@ -112,21 +99,21 @@ namespace booster {
             
             c = *it;
             if (c == '\r' || c == '\n') {
-                ++line_;
-                column_ = 1;
+                ++position_.line;
+                position_.column = 1;
             } else {
-                ++column_;
+                ++position_.column;
             }
             
-            ++offset_;
+            ++position_.offset;
             ++it;
             
             return true;
         }
         
         template<typename I>
-        inline token lexer<I>::position_to_token(const position& p, symbol_type s, const string_type& value) {
-            return token(filename_, p.line, p.column, p.offset, s, value);
+        inline token lexer<I>::position_to_token(const input_position& p, symbol_type s, const string_type& value) {
+            return token(p, s, value);
         }
         
     }

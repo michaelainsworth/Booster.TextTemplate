@@ -1,6 +1,9 @@
 #ifndef BOOSTER_TEXT_TEMPLATE_NODE_HPP_INCLUDED
 #define BOOSTER_TEXT_TEMPLATE_NODE_HPP_INCLUDED
 
+#include <booster/text_template/common.hpp>
+#include <booster/text_template/input_position.hpp>
+
 namespace booster {
     namespace text_template {
         
@@ -22,6 +25,11 @@ namespace booster {
             // Lifecycle
             // -----------------------------------------------------------------
             
+            node() : position_() {}
+            
+            node(const input_position& p)
+            : position_(p) {}
+            
             virtual ~node() = 0;
             
             // -----------------------------------------------------------------
@@ -29,6 +37,14 @@ namespace booster {
             // -----------------------------------------------------------------
             
             virtual void execute(std::ostream& os) = 0;
+            
+            // -----------------------------------------------------------------
+            // Variables
+            // -----------------------------------------------------------------
+            
+        private:
+            
+            input_position position_;
             
         };
 

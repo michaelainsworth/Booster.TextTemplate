@@ -5,6 +5,7 @@
 #include <booster/text_template/common.hpp>
 #include <booster/text_template/dictionary.hpp>
 #include <booster/text_template/error.hpp>
+#include <booster/text_template/input_position.hpp>
 #include <booster/text_template/print_traits.hpp>
 #include <booster/text_template/node.hpp>
 #include <booster/text_template/parent_node.hpp>
