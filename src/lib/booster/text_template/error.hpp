@@ -17,7 +17,9 @@ namespace booster {
          */
         enum errc {
             ok = 0,
-            value_not_printable
+            value_not_printable,
+            non_terminal_unexpected,
+            token_unexpected
         };
         
         // =====================================================================
@@ -39,6 +41,10 @@ namespace booster {
                         return "No error.";
                     case value_not_printable:
                         return "The value type is not specified.";
+                    case non_terminal_unexpected:
+                        return "The non-terminal does not contain a parsing rule.";
+                    case token_unexpected:
+                        return "An unexpected token was encountered.";
                     default:
                         return "Unknown error.";
                 }

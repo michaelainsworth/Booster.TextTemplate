@@ -29,6 +29,8 @@ BOOST_AUTO_TEST_CASE(text) {
     {
         text_template tpl;
         string in("<b>Hello</b>");
+        //! \todo Remove this line.
+        parse(in.begin(), in.end());
         BOOST_CHECK_NO_THROW(tpl = parse(in.begin(), in.end()));
         BOOST_CHECK(in == tpl());
     }

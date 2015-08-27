@@ -81,6 +81,8 @@ namespace booster {
             typedef std::stack<symbol_type> stack_type;
             typedef I iterator;
             typedef std::string string_type;
+            typedef lexer<I> lexer_type;
+            typedef token (lexer_type::*lexer_function)(iterator& it, iterator end);
             
             // -----------------------------------------------------------------
             // Lookaheads
@@ -199,6 +201,12 @@ namespace booster {
                 context.children_->push_back(new text_node(tk.value));
             }
             
+            void parse_eof(const token& tk, parent_node& context) {
+                //! \todo What to do here?
+                stack_.pop();
+                stack_.pop();
+            }
+            
             // -----------------------------------------------------------------
             // Variables
             // -----------------------------------------------------------------
@@ -206,8 +214,9 @@ namespace booster {
         private:
             
             nts_function_map table_;
-            lexer<iterator> lexer_;
+            lexer_type lexer_;
             stack_type stack_;
+            lexer_function lex_;
             
         };
         
@@ -223,6 +232,7 @@ namespace booster {
         parser<I>::parser() {
             //! \todo Set up the parse table.
             table_[nts_template][ts_text] = &parser<I>::parse_text2;
+            table_[nts_template][ts_eof] = &parser<I>::parse_eof;
         }
         
         // ---------------------------------------------------------------------
@@ -239,6 +249,7 @@ namespace booster {
             }
             
             //! \todo Reset the lexer?
+            lex_ = &lexer_type::get_text;
             
             stack_.push(ts_eof);
             stack_.push(nts_template);
@@ -247,15 +258,14 @@ namespace booster {
                   nts_end = table_.end()
                 , nts_it = nts_end;
             
-            
-            token tk;
-            while ((tk = lexer_.get_token(it, end))) {
+            while (true) {
+                token tk = (lexer_.*lex_)(it, end);
                 symbol_type state = stack_.top();
                 
                 nts_it = table_.find(state);
                 if (nts_it == nts_end) {
-                    //! \todo Error - no current state - what to do here?
-                    //! \todo This is more a programming error.
+                    e = boost::system::error_condition(non_terminal_unexpected,
+                                                       get_error_category());
                     return false;
                 }
                 
@@ -265,12 +275,17 @@ namespace booster {
                 , ts_end = nts_it->second.end();
                 
                 if (ts_it == ts_end) {
-                    //! \todo Unexpected symbol
+                    e = boost::system::error_condition(token_unexpected,
+                                                       get_error_category());
                     return false;
                 }
                 
                 parse_function_type pf = ts_it->second;
                 (this->*pf)(tk, *tpl.nodes_);
+                
+                if (!stack_.size()) {
+                    break;
+                }
             }
             
             return true;

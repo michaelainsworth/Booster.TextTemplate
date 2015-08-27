@@ -4,6 +4,7 @@
 #include <booster/text_template/common.hpp>
 #include <booster/text_template/token.hpp>
 #include <string>
+#include <vector>
 
 namespace booster {
     namespace text_template {
@@ -38,6 +39,7 @@ namespace booster {
             // Lexing methods
             // -----------------------------------------------------------------
             
+            token get_text(iterator& it, iterator end);
             token get_token(iterator& it, iterator end);
             
             // -----------------------------------------------------------------
@@ -46,10 +48,23 @@ namespace booster {
             
         private:
             
+            bool lex_sequence(iterator& begin, iterator end,
+                              const std::string& chars);
+            
             bool get_char(char& c, iterator& it, iterator end);
             token position_to_token(const input_position& p, symbol_type s, const string_type& value);
             
             input_position position_;
+            
+            typedef std::vector<token> cache_type;
+            cache_type cache_;
+            
+            //! \todo A clear() method to clear cache and position?
+            
+            bool is_whitespace(char c) {
+                return ' ' == c || '\t' == c || '\n' == c || '\r' == c;
+            }
+            
             
         };
         
@@ -62,9 +77,15 @@ namespace booster {
         inline lexer<I>::lexer() : position_("unknown", 1, 1, 1) {}
 
         template<typename I>
-        token lexer<I>::get_token(iterator& it, iterator end) {
+        token lexer<I>::get_text(iterator& it, iterator end) {
+            if (cache_.size()) {
+                token tk = cache_.back();
+                cache_.pop_back();
+                return tk;
+            }
+            
             if (it == end) {
-                return token();
+                return token(position_, ts_eof, "");
             }
             
             input_position p(position_);
@@ -74,16 +95,45 @@ namespace booster {
             while (get_char(c, it, end)) {
                 
                 //! \todo Fix this
-//                if (*it == '@') {
-//                    iterator next(it);
-//                    if (parse_quick_print_open(next, end)) {
-//                        parent.children_->push_back(new text_node(text));
-//                        it = next;
-//                        return lookahead_quick_print_open;
-//                    } else {
-//                        text += *it;
-//                    }
-//                }
+                if ('@' == c) {
+                    input_position print_pos(position_);
+                    iterator next(it);
+                    if (lex_sequence(next, end, "print") && next != end &&
+                        (is_whitespace(*next) || '(' == *next)) {
+                        cache_.push_back(token(print_pos, ts_quick_print, "@print"));
+                        return token(position_, ts_text, text);
+//                        char n;
+//                        if (!get_char(n, next, end) || !is_whitespace(n) || '(') {
+//                            // TODO: This should unget char.
+//                        }
+                    }
+                }
+                
+                text += c;
+            }
+            
+            return position_to_token(p, ts_text, text);
+        }
+        
+        template<typename I>
+        token lexer<I>::get_token(iterator& it, iterator end) {
+            if (cache_.size()) {
+                token tk = cache_.back();
+                cache_.pop_back();
+                return tk;
+            }
+            
+            if (it == end) {
+                return token(position_, ts_eof, "");
+            }
+            
+            input_position p(position_);
+            string_type text;
+            char c;
+            
+            while (get_char(c, it, end)) {
+                
+                //! \todo parse of number.
                 
                 text += c;
             }
@@ -114,6 +164,29 @@ namespace booster {
         template<typename I>
         inline token lexer<I>::position_to_token(const input_position& p, symbol_type s, const string_type& value) {
             return token(p, s, value);
+        }
+        
+        template<typename I>
+        inline bool lexer<I>::lex_sequence(iterator& it, iterator end,
+                                           const std::string& chars) {
+            iterator next(it);
+            std::string::const_iterator sit = chars.begin(), send = chars.end();
+            
+            char c;
+            while (get_char(c, next, end)) {
+                if (c != *sit) {
+                    return false;
+                }
+                
+                ++sit;
+                
+                if (sit == send) {
+                    it = next;
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
     }
