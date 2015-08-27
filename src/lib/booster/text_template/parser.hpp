@@ -161,11 +161,6 @@ namespace booster {
             /*!
              \todo Implement
              */
-            bool parse_double_value(iterator& begin, iterator end, parent_node& parent);
-            
-            /*!
-             \todo Implement
-             */
             bool parse_integer_value(iterator& begin, iterator end, parent_node& parent);
             
             // -----------------------------------------------------------------
@@ -275,7 +270,7 @@ namespace booster {
                 , ts_end = nts_it->second.end();
                 
                 if (ts_it == ts_end) {
-                    e = boost::system::error_condition(token_unexpected,
+                    e = boost::system::error_condition(terminal_unexpected,
                                                        get_error_category());
                     return false;
                 }
@@ -369,90 +364,7 @@ namespace booster {
             //! \todo Finish
             return false;
         }
-        
-        template<typename I>
-        bool parser<I>::parse_double_value(iterator& begin,
-                                           iterator end,
-                                           parent_node& parent) {
-            if (begin == end) {
-                return false;
-            }
-            
-            iterator it(begin), prev(it);
-            std::string result, digs = digits();
-            unsigned i = 0;
-            bool is_negative = false, found_sign = false, found_dot = false;
-            
-            while (it != end) {
-                if (0 == i) {
-                    if (*it == '-') {
-                        is_negative = true;
-                        found_sign = true;
-                        result += *it;
-                    } else if (*it == '+') {
-                        found_sign = true;
-                        result += *it;
-                    } else {
-                        iterator next(it);
-                        if (!parse_alternates(next, end, digs)) {
-                            return false;
-                        } else {
-                            result += *it;
-                        }
-                    }
-                } else {
-                    if (*it == '.') {
-                        if (result[i-1] == '-' || result[i-1] == '+') {
-                            return false;
-                        } else if (result[i-1] == '.') {
-                            if (found_dot) {
-                                it = prev;
-                                break;
-                            } else {
-                                found_dot = true;
-                                result += *it;
-                            }
-                        } else {
-                            found_dot = true;
-                            result += *it;
-                        }
-                    } else {
-                        iterator next(it);
-                        if (!parse_alternates(next, end, digs)) {
-                            if (result[i-1] == '-' || result[i-1] == '+') {
-                                return false;
-                            } else {
-                                break;
-                            }
-                        } else {
-                            result += *it;
-                        }
-                    }
-                }
                 
-                prev = it;
-                ++i;
-                ++it;
-            }
-            
-            if (!found_dot) {
-                return false;
-            }
-            
-            if (result[i-1] == '.') {
-                return false;
-            }
-            
-            try {
-                double_type d = boost::lexical_cast<double_type>(result);
-                parent.children_->push_back(new value_node<double_type>(d));
-                begin = it;
-                return true;
-            } catch (boost::bad_lexical_cast&) {
-                return false;
-            }
-        }
-        
         template<typename I>
         bool parser<I>::parse_integer_value(iterator& begin,
                                             iterator end,

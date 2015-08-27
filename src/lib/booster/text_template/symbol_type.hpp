@@ -11,6 +11,7 @@ namespace booster {
             ts_eof,
             ts_text,
             ts_quick_print,
+            ts_double,
             nts_template
         };
         
@@ -19,6 +20,7 @@ namespace booster {
                 case ts_unknown:        return "ts_unknown";
                 case ts_eof:            return "ts_eof";
                 case ts_text:           return "ts_text";
+                case ts_double:         return "ts_double";
                 case nts_template:      return "nts_template";
                 case ts_quick_print:    return "ts_quick_print";
                 default:

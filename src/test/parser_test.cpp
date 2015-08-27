@@ -8,14 +8,15 @@ using boost::system::error_condition;
 using booster::text_template::parent_node;
 using booster::text_template::parse;
 using booster::text_template::parser;
+using booster::text_template::lexer;
 using booster::text_template::text_template;
 using std::string;
 
 bool test_double(const std::string& in) {
     std::string::const_iterator begin = in.begin();
-    parser<std::string::const_iterator> pp;
-    parent_node parent;
-    return pp.parse_double_value(begin, in.end(), parent);
+    booster::text_template::lexer<std::string::const_iterator> ll;
+    booster::text_template::token tk = ll.get_token(begin, in.end());
+    return tk.type == booster::text_template::ts_double;
 }
 
 bool test_integer(const std::string& in) {
@@ -43,7 +44,7 @@ BOOST_AUTO_TEST_CASE(text) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(parse_double_value) {
+BOOST_AUTO_TEST_CASE(lex_double) {
     BOOST_CHECK_EQUAL(false, test_double(""));
     BOOST_CHECK_EQUAL(false, test_double("-"));
     BOOST_CHECK_EQUAL(false, test_double("-+"));
