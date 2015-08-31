@@ -50,6 +50,9 @@ namespace booster {
             token(const input_position& p, symbol_type s, const string_type& v)
             : position(p), type(s), value(v) {}
             
+            token(const input_position& p, symbol_type s, char v)
+            : position(p), type(s), value(&v, 1) {}
+            
 
             // -----------------------------------------------------------------
             // Operators

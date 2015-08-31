@@ -12,7 +12,11 @@ namespace booster {
             ts_text,
             ts_quick_print,
             ts_double,
-            nts_template
+            ts_comma,
+            ts_semicolon,
+            nts_template,
+            nts_quick_print,
+            nts_quick_print_tail
         };
         
         inline std::string symbol_type_description(symbol_type t) {
@@ -21,8 +25,10 @@ namespace booster {
                 case ts_eof:            return "ts_eof";
                 case ts_text:           return "ts_text";
                 case ts_double:         return "ts_double";
+                case ts_semicolon:      return "ts_semicolon";
                 case nts_template:      return "nts_template";
                 case ts_quick_print:    return "ts_quick_print";
+                case nts_quick_print:   return "nts_quick_print";
                 default:
                     return "UNKNOWN SYMBOL TYPE";
             }

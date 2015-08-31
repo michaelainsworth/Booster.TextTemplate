@@ -40,6 +40,7 @@ namespace booster {
             // Execution
             // -----------------------------------------------------------------
             
+            virtual void describe(std::ostream& os, unsigned depth);
             virtual void execute(std::ostream& os);
             
             // -----------------------------------------------------------------
@@ -56,7 +57,36 @@ namespace booster {
         // Implementation
         // =====================================================================
         
-        inline text_node::text_node(const string_type& text) : text_(text) {}
+        inline text_node::text_node(const string_type& text) : text_(text) {
+        }
+        
+        inline void text_node::describe(std::ostream& os, unsigned depth) {
+            std::string::size_type i = 0, s = text_.size();
+            node::describe_indent(os, depth) << "text (" << s << " bytes): ";
+            
+            for (; i < s; ++i) {
+                char c = text_[i];
+                
+                if ('\t' == c) {
+                    os << "\\t";
+                } else if ('\r' == c) {
+                    os << "\\r";
+                } else if ('\n' == c) {
+                    os << "\\n";
+                } else if (' ' == c || is_printable(c)) {
+                    os << c;
+                } else {
+                    os << "?";
+                }
+                
+                if (i > 10) {
+                    os << "...";
+                    break;
+                }
+            }
+            
+            os << "\n";
+        }
         
         inline void text_node::execute(std::ostream& os) {
             os.write(text_.c_str(), text_.size());

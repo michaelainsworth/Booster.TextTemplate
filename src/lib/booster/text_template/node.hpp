@@ -36,7 +36,21 @@ namespace booster {
             // Execution
             // -----------------------------------------------------------------
             
+            virtual void describe(std::ostream& os, unsigned depth) = 0;
             virtual void execute(std::ostream& os) = 0;
+
+            // -----------------------------------------------------------------
+            // Helpers
+            // -----------------------------------------------------------------
+            
+        protected:
+            
+            std::ostream& describe_indent(std::ostream& os, unsigned depth) {
+                for (unsigned i = 0; i < depth * 4; ++i) {
+                    os << " ";
+                }
+                return os;
+            }
             
             // -----------------------------------------------------------------
             // Variables

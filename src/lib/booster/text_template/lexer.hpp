@@ -44,9 +44,19 @@ namespace booster {
             
             token lex_double_value(iterator& it, iterator end, const input_position& pos);
             
+            input_position get_position() const {
+                return position_;
+            }
+            
             // -----------------------------------------------------------------
             // Variables
             // -----------------------------------------------------------------
+            
+            void reset(const string_type& filename) {
+                position_ = input_position(filename, 1, 1, 1);
+                ccache_.clear();
+                cache_.clear();
+            }
             
         private:
             
@@ -66,13 +76,9 @@ namespace booster {
             
             //! \todo A clear() method to clear cache and position?
             
-            bool is_whitespace(char c) {
-                return ' ' == c || '\t' == c || '\n' == c || '\r' == c;
-            }
             
-            bool is_digit(char c) {
-                return '0' <= c && '9' >= c;
-            }
+            
+            
             
             void unget_char(char c);
             
@@ -81,6 +87,43 @@ namespace booster {
             
             
         };
+        
+        //! \todo Templatise
+        inline bool is_digit(char c) {
+            return '0' <= c && '9' >= c;
+        }
+        
+        
+        
+        //! \todo Templatize
+        inline bool is_lower(char c) {
+            return c >= 'a' && c <= 'z';
+        }
+        
+        //! \todo Templatize
+        inline bool is_upper(char c) {
+            return c >= 'A' && c <= 'Z';
+        }
+        
+        //! \todo Templatize
+        inline bool is_alpha(char c) {
+            return is_lower(c) || is_upper(c);
+        }
+        
+        //! \todo Templatize
+        inline bool is_punctuation(char c) {
+            return std::string("`-=~!@#$%^&*()_+[]\{}|;':\",./<>?").find(c) != std::string::npos;
+        }
+
+        //! \todo Templatize
+        inline bool is_printable(char c) {
+            return is_alpha(c) || is_digit(c) || is_punctuation(c);
+        }
+        
+        //! \todo Templatize
+        inline bool is_whitespace(char c) {
+            return ' ' == c || '\t' == c || '\n' == c || '\r' == c;
+        }
         
         // =====================================================================
         // Implementation
@@ -112,14 +155,12 @@ namespace booster {
                 if ('@' == c) {
                     input_position print_pos(position_);
                     iterator next(it);
-                    if (lex_sequence(next, end, "print") && next != end &&
-                        (is_whitespace(*next) || '(' == *next)) {
-                        cache_.push_back(token(print_pos, ts_quick_print, "@print"));
-                        return token(position_, ts_text, text);
-//                        char n;
-//                        if (!get_char(n, next, end) || !is_whitespace(n) || '(') {
-//                            // TODO: This should unget char.
-//                        }
+                    if (lex_sequence(next, end, "print") && next != end) {
+                        if ((is_whitespace(*next) || '(' == *next)) {
+                            it = next;
+                            cache_.push_back(token(print_pos, ts_quick_print, "@print"));
+                            return token(position_, ts_text, text);
+                        }
                     }
                 }
                 
@@ -151,10 +192,21 @@ namespace booster {
                     if ((tk = lex_double_value(prev, end, p))) {
                         it = prev;
                         return tk;
+                    } else {
+                        //! \todo parse of integer, plus, minus.
+                        return token();
                     }
-                    //! \todo parse of integer.
+                } else if (',' == c) {
+                    return token(p, ts_comma, c);
+                } else if (';' == c) {
+                    return token(p, ts_semicolon, c);
+                } else if (is_whitespace(c)) {
+                    // Skip whitespace.
+                } else {
+                    return token(p, ts_unknown, c);
                 }
-                //! \todo Other parsers.
+                
+                prev = it;
             }
             
             return token();
@@ -214,6 +266,7 @@ namespace booster {
             return false;
         }
         
+        //! \todo Rename to just lex_double
         template<typename I>
         inline token lexer<I>::lex_double_value(iterator& begin, iterator end, const input_position& p) {
             if (begin == end) {
@@ -222,7 +275,7 @@ namespace booster {
             
             input_position pos(position_);
             iterator it(begin), prev(it);
-            std::string result, digits = "0123456789";
+            std::string result;
             unsigned i = 0;
             bool is_negative = false, found_sign = false, found_dot = false;
             char c;
@@ -236,42 +289,33 @@ namespace booster {
                     } else if ('+' == c) {
                         found_sign = true;
                         result += c;
+                    } else if (is_digit(c)) {
+                        result += c;
                     } else {
-                        if (!is_digit(c)) {
-                            return token();
-                        } else {
-                            result += c;
-                        }
+                        return token();
                     }
                 } else {
-                    if ('.' == c) {
+                    if (is_digit(c)) {
+                        result += c;
+                    } else if ('.' == c) {
                         if ('-' == result[i-1] || '+' == result[i-1]) {
                             return token();
-                        } else if ('.' == result[i-1]) {
-                            if (found_dot) {
-                                unget_char(c);
-                                it = prev;
-                                break;
-                            } else {
-                                found_dot = true;
-                                result += c;
-                            }
+                        } else if (found_dot) {
+                            unget_char(c);
+                            break;
                         } else {
                             found_dot = true;
                             result += c;
                         }
                     } else {
-                        if (!is_digit(c)) {
-                            if ('-' == result[i-1] || '+' == result[i-1]) {
-                                return token();
-                            } else if ('.' == result[i-1]) {
-                                return token();
-                            } else {
-                                ++i;
-                                break;
-                            }
+                        if ('.' == result[i-1]) {
+                            return token();
+                        } else if ('-' == result[i-1] || '+' == result[i-1]) {
+                            return token();
                         } else {
-                            result += c;
+                            ++i;
+                            unget_char(c);
+                            break;
                         }
                     }
                 }

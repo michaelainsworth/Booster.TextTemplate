@@ -2,6 +2,7 @@
 #define BOOSTER_TEXT_TEMPLATE_VALUE_NODE_HPP_INCLUDED
 
 #include <booster/text_template/node.hpp>
+#include <cmath>
 #include <string>
 
 namespace booster {
@@ -41,6 +42,7 @@ namespace booster {
             // Execution
             // -----------------------------------------------------------------
             
+            virtual void describe(std::ostream& os, unsigned depth);
             virtual void execute(std::ostream& os);
             
             // -----------------------------------------------------------------
@@ -58,11 +60,28 @@ namespace booster {
         // =====================================================================
         
         template<typename T>
-        inline value_node<T>::value_node(const data_type& data) : data_(data) {}
+        inline value_node<T>::value_node(const data_type& data) : data_(data) {
+        }
+        
+        template<>
+        inline void value_node<double_type>::describe(std::ostream& os, unsigned depth) {
+            node::describe_indent(os, depth) << "double (";
+            if (std::floor(data_) == data_) {
+                os << data_ << ".0";
+            } else {
+                os << data_;
+            }
+            os << ")\n";
+        }
         
         template<typename T>
         inline void value_node<T>::execute(std::ostream& os) {
-            //! \todo what should this do?
+            //! \todo Should this go through print traits?
+            if (std::floor(data_) == data_) {
+                os << data_ << ".0";
+            } else {
+                os << data_;
+            }
         }
         
     }

@@ -41,7 +41,7 @@ namespace booster {
              The default constructor allocates a new node_vector in which to
              store the child nodes.
              */
-            parent_node();
+            parent_node(const input_position& pos);
         
             /*!
              If on destruction the parent_node holds the last reference to the
@@ -53,13 +53,14 @@ namespace booster {
             // Execution
             // -----------------------------------------------------------------
             
+            virtual void describe(std::ostream& os, unsigned depth);
             virtual void execute(std::ostream& os);
             
             // -----------------------------------------------------------------
             // Variables
             // -----------------------------------------------------------------
             
-        private:
+        protected:
             
             node_vector_ptr children_;
             
@@ -69,7 +70,8 @@ namespace booster {
         // Implementation
         // =====================================================================
         
-        inline parent_node::parent_node() : children_(new node_vector()) {}
+        inline parent_node::parent_node(const input_position& pos) : node(pos),
+        children_(new node_vector()) {}
         
         inline parent_node::~parent_node() {
             if (1 == children_.use_count()) {
@@ -79,6 +81,15 @@ namespace booster {
                 }
                 
                 children_->clear();
+            }
+        }
+        
+        inline void parent_node::describe(std::ostream& os, unsigned depth) {
+            node::describe_indent(os, depth) << "parent\n";
+            
+            for (node_vector::iterator it = children_->begin(),
+                 end = children_->end(); it != end; ++it) {
+                (*it)->describe(os, depth + 1);
             }
         }
         

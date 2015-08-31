@@ -19,7 +19,8 @@ namespace booster {
             ok = 0,
             value_not_printable,
             non_terminal_unexpected,
-            terminal_unexpected
+            terminal_unexpected,
+            template_uninitialised
         };
         
         // =====================================================================
@@ -45,6 +46,8 @@ namespace booster {
                         return "The non-terminal does not contain a parsing rule.";
                     case terminal_unexpected:
                         return "An unexpected token was encountered.";
+                    case template_uninitialised:
+                        return "The template has not been initialised. This may be because the parsing of the template failed.";
                     default:
                         return "Unknown error.";
                 }

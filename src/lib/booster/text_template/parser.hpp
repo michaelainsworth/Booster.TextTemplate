@@ -2,6 +2,7 @@
 #define BOOSTER_TEXT_TEMPLATE_PARSER_HPP_INCLUDED
 
 #include <boost/lexical_cast.hpp>
+#include <booster/text_template/call_node.hpp>
 #include <booster/text_template/error.hpp>
 #include <booster/text_template/lexer.hpp>
 #include <booster/text_template/quick_print_node.hpp>
@@ -75,7 +76,7 @@ namespace booster {
             // Typedefs
             // -----------------------------------------------------------------
             
-            typedef void (parser::*parse_function_type)(const token& tk, parent_node& context);
+            typedef void (parser::*parse_function_type)(const token& tk);
             typedef std::map<symbol_type, parse_function_type> ts_function_map;
             typedef std::map<symbol_type, ts_function_map> nts_function_map;
             typedef std::stack<symbol_type> stack_type;
@@ -83,6 +84,7 @@ namespace booster {
             typedef std::string string_type;
             typedef lexer<I> lexer_type;
             typedef token (lexer_type::*lexer_function)(iterator& it, iterator end);
+            typedef std::stack<node*> node_stack_type;
             
             // -----------------------------------------------------------------
             // Lookaheads
@@ -116,27 +118,10 @@ namespace booster {
             // -----------------------------------------------------------------
             
             /*!
-             \brief The parse_text() method parses a block of text.
-             
-             This method has no return value and no pass-by-reference to an
-             error_condition because it always succeeds, even on empty input.
-             */
-            lookahead parse_text(iterator& begin, iterator end,
-                                 parent_node& parent);
-            
-            /*!
              \brief The parse_quick_print_open() method parses the opening quick
              print instruction (e.g., "@print").
              */
             bool parse_quick_print_open(iterator& begin, iterator end);
-            
-            /*!
-             \brief The parse_quick_print() method parses a quick-print block.
-             
-             Note that a "@print" string must have already been encountered.
-             */
-            bool parse_quick_print(iterator& begin, iterator end,
-                                   parent_node& parent);
             
             /*!
              \brief The parse_comma_separated_conditions() method does as its
@@ -182,24 +167,56 @@ namespace booster {
             // -----------------------------------------------------------------
             // Character Classes
             // -----------------------------------------------------------------
-            
+
+            //! \todo Remove
             std::string whitespace() {
                 return " \t\r\n";
             }
-            
+
+            //! \todo Remove
             std::string digits() {
                 return "0123456789";
             }
             
-            void parse_text2(const token& tk, parent_node& context) {
+            void parse_text(const token& tk) {
                 //! \todo Nodes should have file, line, column and offset.
-                context.children_->push_back(new text_node(tk.value));
+                parent_node* p = dynamic_cast<parent_node*>(nstack_.top());
+                p->children_->push_back(new text_node(tk.value));
+                lex_ = &lexer_type::get_token;
             }
             
-            void parse_eof(const token& tk, parent_node& context) {
+            void parse_eof(const token& tk) {
                 //! \todo What to do here?
                 stack_.pop();
                 stack_.pop();
+            }
+            
+            void parse_quick_print(const token& tk) {
+                stack_.push(nts_quick_print);
+                parent_node* p = dynamic_cast<parent_node*>(nstack_.top());
+                call_node* c = new call_node(tk.position);
+                p->children_->push_back(c);
+                nstack_.push(c);
+            }
+            
+            void parse_quick_print_head(const token& tk) {
+                double_type d = boost::lexical_cast<double_type>(tk.value);
+                //! \todo Create a function called top_as<parent_node> which
+                //! \todo performs the cast.
+                parent_node* p = dynamic_cast<parent_node*>(nstack_.top());
+                p->children_->push_back(new value_node<double_type>(d));
+                stack_.pop();
+                stack_.push(nts_quick_print_tail);
+            }
+            
+            void parse_quick_print_tail(const token& tk) {
+                if (ts_semicolon == tk.type) {
+                    stack_.pop();
+                    nstack_.pop();
+                    lex_ = &lexer_type::get_text;
+                } else {
+                    //! \todo When a comma, just consume?
+                }
             }
             
             // -----------------------------------------------------------------
@@ -211,6 +228,7 @@ namespace booster {
             nts_function_map table_;
             lexer_type lexer_;
             stack_type stack_;
+            node_stack_type nstack_;
             lexer_function lex_;
             
         };
@@ -226,8 +244,14 @@ namespace booster {
         template<typename I>
         parser<I>::parser() {
             //! \todo Set up the parse table.
-            table_[nts_template][ts_text] = &parser<I>::parse_text2;
+            table_[nts_template][ts_text] = &parser<I>::parse_text;
+            table_[nts_template][ts_quick_print] = &parser<I>::parse_quick_print;
             table_[nts_template][ts_eof] = &parser<I>::parse_eof;
+            
+            table_[nts_quick_print][ts_double] = &parser<I>::parse_quick_print_head;
+            table_[nts_quick_print_tail][ts_comma] = &parser<I>::parse_quick_print_tail;
+            table_[nts_quick_print_tail][ts_semicolon] = &parser<I>::parse_quick_print_tail;
+            
         }
         
         // ---------------------------------------------------------------------
@@ -239,12 +263,17 @@ namespace booster {
                                      text_template& tpl,
                                      boost::system::error_condition& e) {
             
-            while (stack_.size()) {
-                stack_.pop();
+            lex_ = &lexer_type::get_text;
+            lexer_.reset(filename);
+            while (stack_.size()) { stack_.pop(); }
+            
+            while (nstack_.size()) {
+                node* n = nstack_.top();
+                delete n;
+                nstack_.pop();
             }
             
-            //! \todo Reset the lexer?
-            lex_ = &lexer_type::get_text;
+            nstack_.push(new parent_node(lexer_.get_position()));
             
             stack_.push(ts_eof);
             stack_.push(nts_template);
@@ -254,8 +283,19 @@ namespace booster {
                 , nts_it = nts_end;
             
             while (true) {
-                token tk = (lexer_.*lex_)(it, end);
                 symbol_type state = stack_.top();
+                
+                token tk = (lexer_.*lex_)(it, end);
+                if (!tk) {
+                    //! \todo convert this to use error_conditions.
+                    //! \todo Create two function make_error_condition()
+                    //! \todo and throw_system_error().
+                    //! \todo According to the current symbol stack, this
+                    //! \todo ... could say what's expected.
+                    e = boost::system::error_condition(terminal_unexpected,
+                                                       get_error_category());
+                    return false;
+                }
                 
                 nts_it = table_.find(state);
                 if (nts_it == nts_end) {
@@ -264,21 +304,26 @@ namespace booster {
                     return false;
                 }
                 
-                
                 typename ts_function_map::iterator
                 ts_it = nts_it->second.find(tk.type)
                 , ts_end = nts_it->second.end();
                 
                 if (ts_it == ts_end) {
+                    //! \todo change error message to "don't know how to process that."
                     e = boost::system::error_condition(terminal_unexpected,
                                                        get_error_category());
                     return false;
                 }
                 
                 parse_function_type pf = ts_it->second;
-                (this->*pf)(tk, *tpl.nodes_);
+                (this->*pf)(tk);
                 
                 if (!stack_.size()) {
+                    parent_node* p = dynamic_cast<parent_node*>(nstack_.top());
+                    tpl.nodes_ = text_template::parent_node_ptr(p);
+                    while (nstack_.size()) {
+                        nstack_.pop();
+                    }
                     break;
                 }
             }
@@ -289,72 +334,6 @@ namespace booster {
         // ---------------------------------------------------------------------
         // Low-level Parsing
         // ---------------------------------------------------------------------
-        
-        //! \todo This is no longer used.
-        template<typename I>
-        inline typename parser<I>::lookahead parser<I>::parse_text(iterator& begin,
-                                                          iterator end,
-                                                          parent_node& parent) {
-            
-            iterator it(begin);
-            if (it == end) {
-                return lookahead_eof;
-            }
-            
-            std::string text;
-            
-            while (it != end) {
-                if (*it == '@') {
-                    iterator next(it);
-                    if (parse_quick_print_open(next, end)) {
-                        parent.children_->push_back(new text_node(text));
-                        it = next;
-                        return lookahead_quick_print_open;
-                    } else {
-                        text += *it;
-                    }
-                } else {
-                    text += *it;
-                }
-                
-                ++it;
-            }
-            
-            begin = it;
-            parent.children_->push_back(new text_node(text));
-            return lookahead_eof;
-        }
-        
-        template<typename I>
-        inline bool parser<I>::parse_quick_print_open(iterator& begin,
-                                                      iterator end) {
-            iterator it(begin);
-            
-            if (!parse_sequence(it, end, "@print")) {
-                return false;
-            }
-            
-            iterator next(it);
-            if (!parse_alternates(next, end, whitespace() + "(")) {
-                return false;
-            }
-            
-            begin = it;
-            return true;
-        }
-        
-        template<typename I>
-        inline bool parser<I>::parse_quick_print(iterator& begin,
-                                                 iterator end,
-                                                 parent_node& parent) {
-            
-            iterator it(begin);
-            quick_print_node* qprint = new quick_print_node();
-            parent.children_->push_back(qprint);
-            
-            //! \todo parse_comma_separated_expressions
-            return false;
-        }
         
         template<typename I>
         bool parser<I>::parse_comma_separated_conditions(iterator& begin,

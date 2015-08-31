@@ -52,6 +52,7 @@ namespace booster {
             // -----------------------------------------------------------------
             
             std::string operator()();
+            std::string operator()(boost::system::error_condition& e);
             
             // -----------------------------------------------------------------
             // Variables
@@ -67,9 +68,23 @@ namespace booster {
         // Implementation
         // =====================================================================
         
-        inline text_template::text_template() : nodes_(new parent_node()) {}
+        inline text_template::text_template() : nodes_() {}
         
         inline std::string text_template::operator()() {
+            boost::system::error_condition e;
+            std::string result = (*this)(e);
+            if (e) {
+                throw boost::system::system_error(e.value(), e.category());
+            }
+            return result;
+        }
+        
+        inline std::string text_template::operator()(boost::system::error_condition& e) {
+            if (!nodes_) {
+                e = boost::system::error_condition(template_uninitialised, get_error_category());
+                return "";
+            }
+            
             std::ostringstream os;
             nodes_->execute(os);
             return os.str();
