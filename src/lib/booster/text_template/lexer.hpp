@@ -150,8 +150,6 @@ namespace booster {
             char c;
 
             while (get_char(c, it, end)) {
-                
-                //! \todo Fix this
                 if ('@' == c) {
                     input_position print_pos(position_);
                     iterator next(it);

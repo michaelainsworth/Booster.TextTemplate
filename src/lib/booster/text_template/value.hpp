@@ -17,6 +17,15 @@ namespace booster {
          
          \todo Add a #define that determines whether integral types can have
                arithmetic.
+         
+         \todo Define, e.g., BOOSTER_TEXT_TEMPLATE_AUTO_PRINT_TRAITS(x)
+               defines print_traits<x>::print(const x& v) to use operator <<.
+               The same concept can be used for other traits.
+         
+         \todo Add a "parse logicals", "parse comparisons", etc, flags to allow
+               the programmer to determine how much logic can be embedded in the
+               text template.
+         
          */
         template<typename T>
         class value : public basic_value {
