@@ -46,6 +46,7 @@ namespace booster {
                         return "The non-terminal does not contain a parsing rule.";
                     case terminal_unexpected:
                         return "An unexpected token was encountered.";
+                        //! \todo Rename to template_empty;
                     case template_uninitialised:
                         return "The template has not been initialised. This may be because the parsing of the template failed.";
                     default:
