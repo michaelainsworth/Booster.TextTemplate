@@ -286,20 +286,15 @@ namespace booster {
                 
                 token tk = (lexer_.*lex_)(it, end);
                 if (!tk) {
-                    //! \todo convert this to use error_conditions.
-                    //! \todo Create two function make_error_condition()
-                    //! \todo and throw_system_error().
                     //! \todo According to the current symbol stack, this
                     //! \todo ... could say what's expected.
-                    e = boost::system::error_condition(terminal_unexpected,
-                                                       get_error_category());
+                    e = make_error(terminal_unexpected);
                     return false;
                 }
                 
                 nts_it = table_.find(state);
                 if (nts_it == nts_end) {
-                    e = boost::system::error_condition(non_terminal_unexpected,
-                                                       get_error_category());
+                    e = make_error(non_terminal_unexpected);
                     return false;
                 }
                 
@@ -309,8 +304,7 @@ namespace booster {
                 
                 if (ts_it == ts_end) {
                     //! \todo change error message to "don't know how to process that."
-                    e = boost::system::error_condition(terminal_unexpected,
-                                                       get_error_category());
+                    e = make_error(terminal_unexpected);
                     return false;
                 }
                 
@@ -469,7 +463,7 @@ namespace booster {
             
             //! \todo Fix filename!
             if (!p.parse("unknown", begin, end, tpl, e)) {
-                throw boost::system::system_error(e.value(), e.category());
+                throw_error(e.value());
             }
             
             return tpl;

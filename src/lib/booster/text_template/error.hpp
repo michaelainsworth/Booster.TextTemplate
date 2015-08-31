@@ -60,6 +60,16 @@ namespace booster {
             return ec;
         }
         
+        template<typename E>
+        inline boost::system::error_condition make_error(E value) {
+            return boost::system::error_condition(value, get_error_category());
+        }
+        
+        template<typename E>
+        inline boost::system::error_condition throw_error(E value) {
+            throw boost::system::system_error(value, get_error_category());
+        }
+        
     }
 }
 

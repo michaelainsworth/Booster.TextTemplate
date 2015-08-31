@@ -41,6 +41,7 @@ BOOST_AUTO_TEST_CASE(text) {
     BOOST_CHECK_EQUAL("Hello, 1.0!", render("Hello, @print 1.0;!"));
     BOOST_CHECK_EQUAL("Hello, 1.234!", render("Hello, @print 1.234;!"));
     BOOST_CHECK_EQUAL("Hello, -987.654!", render("Hello, @print -987.654 ;!"));
+    //! \todo Multiple doubles (comma-separated).
 }
 
 BOOST_AUTO_TEST_CASE(lex_double) {

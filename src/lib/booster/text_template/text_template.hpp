@@ -74,7 +74,7 @@ namespace booster {
             boost::system::error_condition e;
             std::string result = (*this)(e);
             if (e) {
-                throw boost::system::system_error(e.value(), e.category());
+                throw_error(e.value());
             }
             return result;
         }
