@@ -81,7 +81,7 @@ namespace booster {
         
         inline std::string text_template::operator()(boost::system::error_condition& e) {
             if (!nodes_) {
-                e = boost::system::error_condition(template_uninitialised, get_error_category());
+                e = boost::system::error_condition(template_empty, get_error_category());
                 return "";
             }
             
