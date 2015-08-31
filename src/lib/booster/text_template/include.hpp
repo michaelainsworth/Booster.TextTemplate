@@ -2,6 +2,7 @@
 #define BOOSTER_TEXT_TEMPLATE_INCLUDE_HPP_INCLUDED
 
 #include <booster/text_template/basic_value.hpp>
+#include <booster/text_template/call_node.hpp>
 #include <booster/text_template/common.hpp>
 #include <booster/text_template/dictionary.hpp>
 #include <booster/text_template/error.hpp>
@@ -11,7 +12,6 @@
 #include <booster/text_template/parent_node.hpp>
 #include <booster/text_template/parser.hpp>
 #include <booster/text_template/print_traits.hpp>
-#include <booster/text_template/quick_print_node.hpp>
 #include <booster/text_template/text_node.hpp>
 #include <booster/text_template/text_template.hpp>
 #include <booster/text_template/token.hpp>

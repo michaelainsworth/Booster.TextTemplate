@@ -5,7 +5,6 @@
 #include <booster/text_template/call_node.hpp>
 #include <booster/text_template/error.hpp>
 #include <booster/text_template/lexer.hpp>
-#include <booster/text_template/quick_print_node.hpp>
 #include <booster/text_template/symbol_type.hpp>
 #include <booster/text_template/text_node.hpp>
 #include <booster/text_template/text_template.hpp>
