@@ -1,7 +1,7 @@
 #ifndef BOOSTER_TEXT_TEMPLATE_QUICK_PRINT_NODE_HPP_INCLUDED
 #define BOOSTER_TEXT_TEMPLATE_QUICK_PRINT_NODE_HPP_INCLUDED
 
-#include <booster/text_template/node.hpp>
+#include <booster/text_template/parent_node.hpp>
 
 namespace booster {
     namespace text_template {
