@@ -2,7 +2,7 @@
 #define BOOSTER_TEXT_TEMPLATE_PARSER_HPP_INCLUDED
 
 #include <boost/lexical_cast.hpp>
-#include <booster/text_template/call_node.hpp>
+#include <booster/text_template/quick_print_node.hpp>
 #include <booster/text_template/error.hpp>
 #include <booster/text_template/lexer.hpp>
 #include <booster/text_template/symbol_type.hpp>
@@ -193,7 +193,7 @@ namespace booster {
             void parse_quick_print(const token& tk) {
                 stack_.push(nts_quick_print);
                 parent_node* p = dynamic_cast<parent_node*>(nstack_.top());
-                call_node* c = new call_node(tk.position);
+                quick_print_node* c = new quick_print_node(tk.position);
                 p->children_->push_back(c);
                 nstack_.push(c);
             }
