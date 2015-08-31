@@ -42,7 +42,7 @@ namespace booster {
             token get_text(iterator& it, iterator end);
             token get_token(iterator& it, iterator end);
             
-            token lex_double_value(iterator& it, iterator end, const input_position& pos);
+            token lex_double(iterator& it, iterator end, const input_position& pos);
             
             input_position get_position() const {
                 return position_;
@@ -187,7 +187,7 @@ namespace booster {
             input_position p(position_);
             while (get_char(c, it, end)) {
                 if ('+' == c || '-' == c || is_digit(c)) {
-                    if ((tk = lex_double_value(prev, end, p))) {
+                    if ((tk = lex_double(prev, end, p))) {
                         it = prev;
                         return tk;
                     } else {
@@ -264,9 +264,8 @@ namespace booster {
             return false;
         }
         
-        //! \todo Rename to just lex_double
         template<typename I>
-        inline token lexer<I>::lex_double_value(iterator& begin, iterator end, const input_position& p) {
+        inline token lexer<I>::lex_double(iterator& begin, iterator end, const input_position& p) {
             if (begin == end) {
                 return token();
             }
